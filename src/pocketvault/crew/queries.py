@@ -21,13 +21,6 @@ def get_total_crew_balance(db_path: str) -> float:
     conn.close()
     return row["total"] if row else 0.0
 
-def get_pocket_by_name(db_path: str, name: str) -> dict | None:
-    """Get single pocket by name."""
-    conn = get_connection(db_path)
-    row = conn.execute("SELECT * FROM pockets WHERE name = ?", (name,)).fetchone()
-    conn.close()
-    return dict(row) if row else None
-
 def get_entries_for_pocket(db_path: str, pocket_name: str, limit: int = 100) -> list[dict]:
     """Get recent entries for a pocket."""
     conn = get_connection(db_path)

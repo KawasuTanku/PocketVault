@@ -1,6 +1,6 @@
 from textual.screen import Screen
-from textual.containers import Vertical, Horizontal, Container
-from textual.widgets import Static, DataTable, Header, Footer, Button, Input, Label
+from textual.containers import Container, Horizontal
+from textual.widgets import Static, DataTable, Header, Button, Input, Label
 from textual.binding import Binding
 from pathlib import Path
 from pocketvault.crew.queries import get_pocket_balances, get_ready_to_budget
@@ -10,7 +10,6 @@ from pocketvault.crew.importer import import_crew_entries
 class Dashboard(Screen):
     BINDINGS = [
         ("i", "import_csv", "Import"),
-        ("a", "allocate", "Allocate"),
         ("r", "refresh", "Refresh"),
         ("q", "quit", "Quit"),
     ]
@@ -25,7 +24,7 @@ class Dashboard(Screen):
             yield Static(id="summary")
             yield DataTable(id="pocket-table")
         with Container(id="footer-bar"):
-            yield Static("[i] Import  [a] Allocate  [r] Refresh  [q] Quit", id="help")
+            yield Static("[i] Import  [r] Refresh  [q] Quit", id="help")
     
     def on_mount(self):
         self.refresh_data()
@@ -40,23 +39,15 @@ class Dashboard(Screen):
         
         table = self.query_one("#pocket-table", DataTable)
         table.clear()
-        table.add_columns("Pocket", "Balance", "Target", "Progress")
+        table.add_columns("Pocket", "Balance")
         
         for p in pockets:
             if not p["active"]:
                 continue
-            target = f"${p['target_balance']:,.2f}" if p["target_balance"] > 0 else "—"
-            progress = ""
-            if p["target_balance"] > 0:
-                pct = min(100, (p["balance"] / p["target_balance"]) * 100)
-                progress = f"{pct:.0f}%"
-            table.add_row(p["name"], f"${p['balance']:,.2f}", target, progress)
+            table.add_row(p["name"], f"${p['balance']:,.2f}")
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))
-    
-    def action_allocate(self):
-        pass  # TODO
     
     def action_refresh(self):
         self.refresh_data()
@@ -74,7 +65,6 @@ class ImportScreen(Screen):
         super().__init__(**kwargs)
         self.db_path = db_path
         self.parsed_entries = []
-        self.unknown_pockets = []
     
     def compose(self):
         yield Header()
@@ -88,7 +78,7 @@ class ImportScreen(Screen):
             yield DataTable(id="preview-table")
             yield Static(id="status")
     
-    def on_button_pressed(self, event: Button.Pressed):
+    def on_button_pressed(self, event):
         if event.button.id == "cancel":
             self.dismiss()
         elif event.button.id == "preview":
@@ -105,20 +95,13 @@ class ImportScreen(Screen):
         with open(path) as f:
             self.parsed_entries = list(parse_crew_csv(f.read()))
         
-        pockets = get_pocket_balances(self.db_path)
-        known = {p["name"] for p in pockets}
-        self.unknown_pockets = list({e["pocket_name"] for e in self.parsed_entries} - known)
-        
         table = self.query_one("#preview-table", DataTable)
         table.clear()
         table.add_columns("Pocket", "Amount", "Date", "Title")
         for e in self.parsed_entries[:50]:
             table.add_row(e["pocket_name"], f"${e['amount']:,.2f}", e["timestamp"][:10], e["title"] or "")
         
-        status = f"{len(self.parsed_entries)} entries found."
-        if self.unknown_pockets:
-            status += f" {len(self.unknown_pockets)} new pockets: {', '.join(self.unknown_pockets[:5])}"
-        self.query_one("#status", Static).update(status)
+        self.query_one("#status", Static).update(f"{len(self.parsed_entries)} entries found.")
     
     def _import(self):
         if not self.parsed_entries:

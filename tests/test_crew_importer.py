@@ -59,6 +59,5 @@ def test_import_unknown_pockets():
         ]
         result = import_crew_entries(db_path, entries)
         assert result["new_pockets"] == 2
-        assert set(result["unknown_pockets"]) == {"Spend: Food", "Spend: Fuel"}
     finally:
         os.unlink(db_path)

@@ -2,6 +2,7 @@ import uuid
 from typing import Iterable
 from pocketvault.database import get_connection
 
+
 def import_crew_entries(db_path: str, entries: Iterable[dict]) -> dict:
     """Import Crew entries into database. Returns summary dict."""
     conn = get_connection(db_path)
@@ -12,12 +13,7 @@ def import_crew_entries(db_path: str, entries: Iterable[dict]) -> dict:
     unknown_pockets = set()
     
     for entry in entries:
-        # Check for alias
-        alias = conn.execute("SELECT new_name FROM pocket_aliases WHERE old_name = ?", (entry["pocket_name"],)).fetchone()
-        if alias:
-            pocket_name = alias["new_name"]
-        else:
-            pocket_name = entry["pocket_name"]
+        pocket_name = entry["pocket_name"]
         
         # Get or create pocket
         pocket = conn.execute("SELECT id FROM pockets WHERE name = ?", (pocket_name,)).fetchone()
@@ -30,8 +26,7 @@ def import_crew_entries(db_path: str, entries: Iterable[dict]) -> dict:
             )
             pocket_id = cursor.lastrowid
             new_pockets += 1
-            # Track all new pockets as unknown for merge/rename/create prompt
-            unknown_pockets.add(entry["pocket_name"])
+            unknown_pockets.add(pocket_name)
         
         # Check for duplicate
         existing = conn.execute(
