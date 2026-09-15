@@ -61,3 +61,27 @@ def test_import_unknown_pockets():
         assert result["new_pockets"] == 2
     finally:
         os.unlink(db_path)
+
+
+def test_import_skips_payees():
+    """Payees without pocket prefixes should be skipped."""
+    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+        db_path = f.name
+    try:
+        init_db(db_path)
+        entries = [
+            {"pocket_name": "Spend: Food", "amount": -40.20, "timestamp": "2026-09-01T21:25:33", "title": "Walmart", "memo": None, "status": "cleared", "entry_type": "card", "card_last_four": "1036", "note": None},
+            {"pocket_name": "Arkansas Blue Cross and Blue Shield", "amount": 7.33, "timestamp": "2026-09-02T13:07:50", "title": "Autopilot Reserve → Autopilot Reserve", "memo": "Check deposit", "status": "cleared", "entry_type": "bill_subaccount", "card_last_four": None, "note": None},
+            {"pocket_name": "UNION BANK U ADV 0002", "amount": 10.00, "timestamp": "2026-09-02T13:07:51", "title": "Autopilot Reserve → Autopilot Reserve", "memo": "Check deposit", "status": "cleared", "entry_type": "bill_subaccount", "card_last_four": None, "note": None},
+        ]
+        result = import_crew_entries(db_path, entries)
+        assert result["imported"] == 1
+        assert result["new_pockets"] == 1
+        
+        conn = get_connection(db_path)
+        pockets = conn.execute("SELECT name FROM pockets").fetchall()
+        assert len(pockets) == 1
+        assert pockets[0]["name"] == "Spend: Food"
+        conn.close()
+    finally:
+        os.unlink(db_path)

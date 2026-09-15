@@ -2,6 +2,18 @@ import uuid
 from typing import Iterable
 from pocketvault.database import get_connection
 
+# Pocket naming convention — names matching these are actual pockets, not payees
+POCKET_PREFIXES = ("spend:", "save:", "bill:", "outbox:", "reserve:", "invest:")
+SYSTEM_POCKETS = {"checking", "autopilot reserve", "credit card reserve"}
+
+
+def is_pocket(name: str) -> bool:
+    """Check if a name is a pocket (not a payee/bill)."""
+    name_lower = name.lower().strip()
+    if name_lower in SYSTEM_POCKETS:
+        return True
+    return name_lower.startswith(POCKET_PREFIXES)
+
 
 def import_crew_entries(db_path: str, entries: Iterable[dict]) -> dict:
     """Import Crew entries into database. Returns summary dict."""
@@ -14,6 +26,10 @@ def import_crew_entries(db_path: str, entries: Iterable[dict]) -> dict:
     
     for entry in entries:
         pocket_name = entry["pocket_name"]
+        
+        # Skip payees — only import pockets
+        if not is_pocket(pocket_name):
+            continue
         
         # Get or create pocket
         pocket = conn.execute("SELECT id FROM pockets WHERE name = ?", (pocket_name,)).fetchone()
