@@ -75,13 +75,17 @@ def main():
     # Show all pockets
     for name, pockets in sorted(by_name.items()):
         if len(pockets) > 1:
-            total = sum(p["overallBalance"] for p in pockets)
-            print(f"⚠️  {name} ({len(pockets)} duplicates, combined: ${total/100:.2f})")
+            total = sum(p.get("overallBalance") or 0 for p in pockets)
+            print(f"  {name} ({len(pockets)} duplicates, combined: ${total/100:.2f})")
             for p in pockets:
-                print(f"      ID: {p['id'][:20]}...  Balance: ${p['overallBalance']/100:.2f}  Goal: ${p.get('goal', 0)/100:.2f}")
+                bal = p.get("overallBalance") or 0
+                goal = p.get("goal") or 0
+                print(f"      ID: {p['id'][:20]}...  Balance: ${bal/100:.2f}  Goal: ${goal/100:.2f}")
         else:
             p = pockets[0]
-            print(f"   {name:30s} ${p['overallBalance']/100:>10.2f}  (goal: ${p.get('goal', 0)/100:.2f})")
+            bal = p.get("overallBalance") or 0
+            goal = p.get("goal") or 0
+            print(f"   {name:30s} ${bal/100:>10.2f}  (goal: ${goal/100:.2f})")
 
 if __name__ == "__main__":
     main()
