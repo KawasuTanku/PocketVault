@@ -68,6 +68,11 @@ def main():
     for p in all_pockets:
         by_name[p["name"]].append(p)
     
+    print("\n=== Accounts ===")
+    accounts = result.get("data", {}).get("currentUser", {}).get("accounts", [])
+    for acc in accounts:
+        print(f"  {acc['id']}: {acc.get('displayName', 'N/A')}")
+    
     print(f"\nTotal subaccounts: {len(all_pockets)}")
     print(f"Unique names: {len(by_name)}")
     print()
