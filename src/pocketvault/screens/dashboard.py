@@ -10,6 +10,7 @@ from pocketvault.crew.importer import import_crew_entries
 class Dashboard(Screen):
     BINDINGS = [
         ("i", "import_csv", "Import"),
+        ("s", "sync_crew", "Sync"),
         ("r", "refresh", "Refresh"),
         ("q", "quit", "Quit"),
     ]
@@ -24,7 +25,7 @@ class Dashboard(Screen):
             yield Static(id="summary")
             yield DataTable(id="pocket-table")
         with Container(id="footer-bar"):
-            yield Static("[i] Import  [r] Refresh  [q] Quit", id="help")
+            yield Static("[i] Import CSV  [s] Sync Crew  [r] Refresh  [q] Quit", id="help")
     
     def on_mount(self):
         self.refresh_data()
@@ -48,6 +49,15 @@ class Dashboard(Screen):
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))
+    
+    def action_sync_crew(self):
+        try:
+            from pocketvault.crew.sync import sync_crew_pockets
+            result = sync_crew_pockets(self.db_path)
+            self.notify(f"Synced: {result['new']} new, {result['updated']} updated", timeout=3)
+        except Exception as e:
+            self.notify(f"Sync failed: {e}", timeout=5, severity="error")
+        self.refresh_data()
     
     def action_refresh(self):
         self.refresh_data()

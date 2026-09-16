@@ -6,14 +6,18 @@ SCHEMA = """
 -- Crew tables
 CREATE TABLE IF NOT EXISTS pockets (
     id INTEGER PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    role TEXT DEFAULT 'user',
-    pocket_type TEXT DEFAULT 'spend',
+    crew_id TEXT UNIQUE NOT NULL,           -- Stable subaccount UUID from Crew API
+    name TEXT NOT NULL,                      -- User-facing pocket name (may have duplicates)
+    display_name TEXT,                       -- System display name (e.g., "Autopilot Reserve" for reserve-linked)
+    account_id TEXT,                         -- Parent account ID
+    account_name TEXT,                       -- Parent account display name
+    is_primary INTEGER DEFAULT 0,            -- Whether this is the primary pocket
+    piggy_banked INTEGER DEFAULT 0,          -- Whether pocket is piggy banked
+    owner TEXT,                              -- Owner display name
     active INTEGER DEFAULT 1,
-    weekly_amount REAL DEFAULT 0,
-    target_balance REAL DEFAULT 0,
     sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
 );
 
 CREATE TABLE IF NOT EXISTS entries (
@@ -41,7 +45,7 @@ CREATE TABLE IF NOT EXISTS import_batches (
 
 CREATE TABLE IF NOT EXISTS pocket_aliases (
     old_name TEXT PRIMARY KEY,
-    new_name TEXT NOT NULL REFERENCES pockets(name),
+    new_name TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -53,8 +57,8 @@ CREATE TABLE IF NOT EXISTS config (
 -- Crew views
 CREATE VIEW IF NOT EXISTS pocket_balances AS
 SELECT
-    p.id, p.name, p.role, p.active, p.pocket_type,
-    p.weekly_amount, p.target_balance,
+    p.id, p.crew_id, p.name, p.display_name, p.active,
+    p.account_name, p.is_primary, p.owner,
     COALESCE(SUM(e.amount), 0) AS balance,
     p.sort_order
 FROM pockets p
@@ -66,7 +70,7 @@ CREATE VIEW IF NOT EXISTS ready_to_budget AS
 SELECT COALESCE(SUM(e.amount), 0) as balance
 FROM pockets p
 LEFT JOIN entries e ON e.pocket_id = p.id
-WHERE p.name = 'Autopilot Reserve'
+WHERE p.name = 'Autopilot Reserve' AND p.active = 1
 GROUP BY p.id;
 
 CREATE VIEW IF NOT EXISTS total_crew_balance AS
