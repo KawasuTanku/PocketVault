@@ -1,6 +1,6 @@
 from textual.screen import Screen
 from textual.containers import Container, Horizontal
-from textual.widgets import Static, DataTable, Header, Button, Input, Label
+from textual.widgets import Static, DataTable, Header, Footer, Button, Input, Label
 from textual.binding import Binding
 from pathlib import Path
 from pocketvault.crew.queries import get_pocket_balances, get_ready_to_budget
@@ -24,8 +24,7 @@ class Dashboard(Screen):
         with Container(id="dashboard"):
             yield Static(id="summary")
             yield DataTable(id="pocket-table")
-        with Container(id="footer-bar"):
-            yield Static("[i] Import CSV  [s] Sync Crew  [r] Refresh  [q] Quit", id="help")
+        yield Footer()
     
     def on_mount(self):
         self.refresh_data()
@@ -39,7 +38,6 @@ class Dashboard(Screen):
         summary.update(f"Ready to Budget: ${ready:,.2f}  |  Total Pockets: ${total:,.2f}")
         
         table = self.query_one("#pocket-table", DataTable)
-        # Remove and recreate table to reset columns
         table.remove()
         new_table = DataTable(id="pocket-table")
         new_table.add_columns("Pocket", "Balance", "Goal", "Progress")
@@ -57,9 +55,8 @@ class Dashboard(Screen):
                 progress = f"{pct:.0f}%"
             new_table.add_row(p["name"], bal_str, goal_str, progress)
         
-        # Mount the new table in the same container
         container = self.query_one("#dashboard")
-        container.mount(new_table, before="#footer-bar")
+        container.mount(new_table)
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))

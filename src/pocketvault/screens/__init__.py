@@ -24,8 +24,7 @@ class Dashboard(Screen):
         with Container(id="dashboard"):
             yield Static(id="summary")
             yield DataTable(id="pocket-table")
-        with Container(id="footer-bar"):
-            yield Static("[i] Import  [a] Allocate  [r] Refresh  [q] Quit", id="help")
+        yield Footer()
     
     def on_mount(self):
         self.refresh_data()
@@ -57,7 +56,7 @@ class Dashboard(Screen):
             new_table.add_row(p["name"], bal_str, goal_str, progress)
         
         container = self.query_one("#dashboard")
-        container.mount(new_table, before="#footer-bar")
+        container.mount(new_table)
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))
