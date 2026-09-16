@@ -23,7 +23,9 @@ class Dashboard(Screen):
         yield Header()
         with Container(id="dashboard"):
             yield Static(id="summary")
-            yield DataTable(id="pocket-table")
+            table = DataTable(id="pocket-table")
+            table.add_columns("Pocket", "Balance", "Goal", "Progress")
+            yield table
         yield Footer()
     
     def on_mount(self):
@@ -38,9 +40,8 @@ class Dashboard(Screen):
         summary.update(f"Ready to Budget: ${ready:,.2f}  |  Total Pockets: ${total:,.2f}")
         
         table = self.query_one("#pocket-table", DataTable)
-        table.remove()
-        new_table = DataTable(id="pocket-table")
-        new_table.add_columns("Pocket", "Balance", "Goal", "Progress")
+        table.clear()
+        # Don't re-add columns — they're already set in compose()
         
         for p in pockets:
             if not p["active"]:
@@ -53,10 +54,7 @@ class Dashboard(Screen):
             if goal_cents > 0:
                 pct = min(100, (bal_cents / goal_cents) * 100)
                 progress = f"{pct:.0f}%"
-            new_table.add_row(p["name"], bal_str, goal_str, progress)
-        
-        container = self.query_one("#dashboard")
-        container.mount(new_table)
+            table.add_row(p["name"], bal_str, goal_str, progress)
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))
