@@ -23,30 +23,83 @@ def main():
     token = sys.argv[1] if len(sys.argv) > 1 else input("Bearer token: ").strip()
     token = token.encode('ascii', errors='ignore').decode('ascii')
     
-    print("=== Introspection: Account type fields ===")
+    print("=== Account with billReserve and balanceLastRefreshed ===")
     result = crew_query(token, """
         query {
-            __type(name: "Account") {
-                fields {
-                    name
-                    type {
+            currentUser {
+                accounts {
+                    id
+                    displayName
+                    balanceLastRefreshed
+                    billReserve {
+                        id
                         name
-                        kind
-                        ofType {
-                            name
-                            kind
-                        }
+                        balance
+                        goal
+                        type
+                    }
+                    balanceOverTime {
+                        date
+                        balance
+                    }
+                    subaccounts {
+                        id
+                        name
+                        overallBalance
+                        goal
+                        isPrimary
+                        type
                     }
                 }
             }
         }
     """)
-    if "data" in result:
+    if "errors" in result:
+        print(f"Errors: {result['errors']}")
+    else:
+        accounts = result["data"]["currentUser"]["accounts"]
+        for account in accounts:
+            print(f"\nAccount: {account['displayName']} ({account['id']})")
+            print(f"  balanceLastRefreshed: {account.get('balanceLastRefreshed')}")
+            
+            bill_reserve = account.get("billReserve")
+            if bill_reserve:
+                print(f"  billReserve:")
+                if isinstance(bill_reserve, list):
+                    for r in bill_reserve:
+                        print(f"    {r.get('name')}: balance={r.get('balance')} goal={r.get('goal')} type={r.get('type')}")
+                elif isinstance(bill_reserve, dict):
+                    print(f"    {bill_reserve.get('name')}: balance={bill_reserve.get('balance')}")
+            else:
+                print(f"  billReserve: {bill_reserve}")
+            
+            subaccounts = account.get("subaccounts", [])
+            print(f"  subaccounts ({len(subaccounts)}):")
+            for sub in subaccounts:
+                print(f"    {sub['name']:30s} balance={sub.get('overallBalance')} type={sub.get('type')}")
+    
+    print("\n\n=== Introspection: BillReserve type ===")
+    result = crew_query(token, """
+        query {
+            __type(name: "BillReserve") {
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                    }
+                }
+            }
+        }
+    """)
+    if "data" in result and result["data"]:
         fields = result["data"]["__type"]["fields"]
         for f in fields:
-            print(f"  {f['name']}: {f['type'].get('name') or f['type'].get('ofType',{}).get('name')}")
+            print(f"  {f['name']}: {f['type'].get('name')}")
+    else:
+        print(result)
     
-    print("\n=== Introspection: Subaccount type fields ===")
+    print("\n\n=== Introspection: Subaccount type fields ===")
     result = crew_query(token, """
         query {
             __type(name: "Subaccount") {
@@ -60,74 +113,10 @@ def main():
             }
         }
     """)
-    if "data" in result:
+    if "data" in result and result["data"]:
         fields = result["data"]["__type"]["fields"]
         for f in fields:
             print(f"  {f['name']}: {f['type'].get('name')}")
-    
-    print("\n=== Try querying accounts with different fields ===")
-    result = crew_query(token, """
-        query {
-            currentUser {
-                accounts {
-                    id
-                    type
-                    balance
-                    pockets {
-                        id
-                        name
-                        balance
-                        type
-                    }
-                    reserves {
-                        id
-                        name
-                        balance
-                    }
-                }
-            }
-        }
-    """)
-    print(json.dumps(result, indent=2)[:3000])
-    
-    print("\n=== Try node query for account ===")
-    result = crew_query(token, """
-        query {
-            currentUser {
-                accounts {
-                    id
-                }
-            }
-        }
-    """)
-    if "data" in result:
-        accounts = result["data"]["currentUser"]["accounts"]
-        if accounts:
-            account_id = accounts[0]["id"]
-            print(f"First account ID: {account_id}")
-            
-            # Try to get account details with different fields
-            result2 = crew_query(token, """
-                query($id: ID!) {
-                    node(id: $id) {
-                        ... on Account {
-                            id
-                            pockets {
-                                id
-                                name
-                                balance
-                                type
-                            }
-                            subaccounts {
-                                id
-                                name
-                                type
-                            }
-                        }
-                    }
-                }
-            """, {"id": account_id})
-            print(json.dumps(result2, indent=2)[:3000])
 
 if __name__ == "__main__":
     main()
