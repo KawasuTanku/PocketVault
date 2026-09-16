@@ -39,8 +39,10 @@ class Dashboard(Screen):
         summary.update(f"Ready to Budget: ${ready:,.2f}  |  Total Pockets: ${total:,.2f}")
         
         table = self.query_one("#pocket-table", DataTable)
-        table.clear()
-        table.add_columns("Pocket", "Balance", "Goal", "Progress")
+        # Remove and recreate table to reset columns
+        table.remove()
+        new_table = DataTable(id="pocket-table")
+        new_table.add_columns("Pocket", "Balance", "Goal", "Progress")
         
         for p in pockets:
             if not p["active"]:
@@ -53,7 +55,11 @@ class Dashboard(Screen):
             if goal_cents > 0:
                 pct = min(100, (bal_cents / goal_cents) * 100)
                 progress = f"{pct:.0f}%"
-            table.add_row(p["name"], bal_str, goal_str, progress)
+            new_table.add_row(p["name"], bal_str, goal_str, progress)
+        
+        # Mount the new table in the same container
+        container = self.query_one("#dashboard")
+        container.mount(new_table, before="#footer-bar")
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))
