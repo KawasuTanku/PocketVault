@@ -6,7 +6,7 @@ SCHEMA = """
 -- Crew tables
 CREATE TABLE IF NOT EXISTS pockets (
     id INTEGER PRIMARY KEY,
-    crew_id TEXT UNIQUE NOT NULL,           -- Stable subaccount UUID from Crew API
+    crew_id TEXT UNIQUE,                      -- Stable subaccount UUID from Crew API (NULL for CSV-only pockets)
     name TEXT NOT NULL,                      -- User-facing pocket name (may have duplicates)
     display_name TEXT,                       -- System display name (e.g., "Autopilot Reserve" for reserve-linked)
     account_id TEXT,                         -- Parent account ID
@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS pockets (
     is_primary INTEGER DEFAULT 0,            -- Whether this is the primary pocket
     piggy_banked INTEGER DEFAULT 0,          -- Whether pocket is piggy banked
     owner TEXT,                              -- Owner display name
+    balance_cents INTEGER DEFAULT 0,         -- Current balance in cents (from Crew API)
+    goal_cents INTEGER,                      -- Goal amount in cents (from Crew API)
     active INTEGER DEFAULT 1,
     sort_order INTEGER DEFAULT 0,
     created_at TEXT DEFAULT (datetime('now')),
@@ -58,12 +60,9 @@ CREATE TABLE IF NOT EXISTS config (
 CREATE VIEW IF NOT EXISTS pocket_balances AS
 SELECT
     p.id, p.crew_id, p.name, p.display_name, p.active,
-    p.account_name, p.is_primary, p.owner,
-    COALESCE(SUM(e.amount), 0) AS balance,
+    p.account_name, p.is_primary, p.owner, p.balance_cents, p.goal_cents,
     p.sort_order
 FROM pockets p
-LEFT JOIN entries e ON e.pocket_id = p.id
-GROUP BY p.id
 ORDER BY p.sort_order, p.name;
 
 CREATE VIEW IF NOT EXISTS ready_to_budget AS

@@ -33,24 +33,27 @@ class Dashboard(Screen):
     def refresh_data(self):
         ready = get_ready_to_budget(self.db_path)
         pockets = get_pocket_balances(self.db_path)
-        total = sum(p["balance"] for p in pockets if p["active"])
+        total = sum((p.get("balance_cents", 0) or 0) / 100.0 for p in pockets if p["active"])
         
         summary = self.query_one("#summary", Static)
         summary.update(f"Ready to Budget: ${ready:,.2f}  |  Total Pockets: ${total:,.2f}")
         
         table = self.query_one("#pocket-table", DataTable)
         table.clear()
-        table.add_columns("Pocket", "Balance", "Target", "Progress")
+        table.add_columns("Pocket", "Balance", "Goal", "Progress")
         
         for p in pockets:
             if not p["active"]:
                 continue
-            target = f"${p['target_balance']:,.2f}" if p["target_balance"] > 0 else "—"
+            bal_cents = p.get("balance_cents") or 0
+            goal_cents = p.get("goal_cents") or 0
+            bal_str = f"${bal_cents/100:,.2f}"
+            goal_str = f"${goal_cents/100:,.2f}" if goal_cents > 0 else "—"
             progress = ""
-            if p["target_balance"] > 0:
-                pct = min(100, (p["balance"] / p["target_balance"]) * 100)
+            if goal_cents > 0:
+                pct = min(100, (bal_cents / goal_cents) * 100)
                 progress = f"{pct:.0f}%"
-            table.add_row(p["name"], f"${p['balance']:,.2f}", target, progress)
+            table.add_row(p["name"], bal_str, goal_str, progress)
     
     def action_import_csv(self):
         self.app.push_screen(ImportScreen(self.db_path))
