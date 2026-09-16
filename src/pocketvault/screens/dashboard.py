@@ -40,7 +40,7 @@ class Dashboard(Screen):
         
         table = self.query_one("#pocket-table", DataTable)
         table.clear()
-        table.add_columns("Pocket", "Balance")
+        table.add_columns("Pocket", "Balance", "Goal", "Progress")
         
         for p in pockets:
             if not p["active"]:
