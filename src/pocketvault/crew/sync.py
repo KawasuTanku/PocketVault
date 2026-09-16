@@ -1,6 +1,6 @@
 """Crew API sync — fetch pockets from Crew and sync to local DB."""
 import json
-from pocketvault.database import get_connection, get_db_path
+from pocketvault.database import get_connection, get_db_path, init_db
 from pocketvault.crew.api import fetch_pockets, fetch_autopilot_reserve
 
 
@@ -12,6 +12,7 @@ def sync_crew_pockets(db_path=None, token=None) -> dict:
     if db_path is None:
         db_path = get_db_path()
     
+    init_db(db_path)
     conn = get_connection(db_path)
     
     # Fetch from Crew API
