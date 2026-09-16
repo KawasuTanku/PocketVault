@@ -25,14 +25,6 @@ def crew_query(token, query, variables=None):
 def main():
     token = sys.argv[1] if len(sys.argv) > 1 else input("Bearer token: ").strip()
     
-    # Clean token — remove non-ASCII characters
-    token = token.encode('ascii', errors='ignore').decode('ascii')
-    
-    if not token:
-        print("Error: No token provided")
-        return
-    
-    print(f"\nToken (first 20 chars): {token[:20]}...")
     print("\n=== CurrentUser: Pockets ===")
     result = crew_query(token, """
         query CurrentUser {
