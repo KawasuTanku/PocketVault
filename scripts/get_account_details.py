@@ -103,7 +103,11 @@ def main():
     subaccounts = node.get("subaccounts", [])
     print(f"\nSubaccounts ({len(subaccounts)}):")
     for sub in subaccounts:
-        print(f"  {sub.get('name'):30s} balance={sub.get('overallBalance'):>10} goal={sub.get('goal', 0):>10} type={sub.get('type')} primary={sub.get('isPrimary')} piggy={sub.get('piggyBanked')} owner={sub.get('owner', {}).get('displayName', 'N/A')}")
+        bal = sub.get("overallBalance")
+        goal = sub.get("goal")
+        bal_str = f"${bal/100:.2f}" if bal is not None else "None"
+        goal_str = f"${goal/100:.2f}" if goal is not None else "None"
+        print(f"  {sub.get('name'):30s} balance={bal_str:>12} goal={goal_str:>12} type={sub.get('type')} primary={sub.get('isPrimary')} piggy={sub.get('piggyBanked')} owner={sub.get('owner', {}).get('displayName', 'N/A')}")
 
 if __name__ == "__main__":
     main()
