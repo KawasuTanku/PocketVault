@@ -68,8 +68,7 @@ class PocketVaultApp(App):
             return
 
         try:
-            available = self.themes
-            if theme_name in available:
+            if theme_name in self.available_themes:
                 self.theme = theme_name
                 return
 
