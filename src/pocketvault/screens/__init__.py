@@ -22,8 +22,8 @@ class Dashboard(Screen):
         with Container(id="dashboard"):
             yield Static(id="crew-summary", classes="summary")
             yield DataTable(id="pockets-table")
-            yield Static(id="monster-summary", classes="summary")
             yield Static(id="spacer", classes="spacer")
+            yield Static(id="monster-summary", classes="summary")
             yield DataTable(id="monster-table")
         yield Footer()
 
