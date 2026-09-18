@@ -26,6 +26,31 @@ class PocketVaultApp(App):
     #pocket-table {
         height: 1fr;
     }
+    #settings-modal {
+        width: 80%;
+        height: 80%;
+        background: $surface;
+        border: solid $accent;
+        padding: 1;
+    }
+    #settings-title {
+        height: 3;
+        content-align: center middle;
+        text-style: bold;
+        color: $accent;
+    }
+    #settings-form {
+        height: 1fr;
+        overflow-y: auto;
+    }
+    #settings-buttons {
+        height: 3;
+        content-align: center middle;
+    }
+    #settings-actions {
+        height: 3;
+        content-align: center middle;
+    }
     """
     
     def __init__(self, db_path: str | None = None, **kwargs):

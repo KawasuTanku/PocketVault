@@ -11,6 +11,7 @@ class Dashboard(Screen):
         ("c", "sync_crew", "Crew"),
         ("m", "sync_monster", "Monster"),
         ("t", "sync_retirement", "Retirement"),
+        ("g", "open_settings", "Settings"),
         ("r", "refresh", "Refresh"),
         ("q", "quit", "Quit"),
     ]
@@ -171,3 +172,7 @@ class Dashboard(Screen):
 
     def action_quit(self):
         self.app.exit()
+
+    def action_open_settings(self):
+        from pocketvault.screens.settings import SettingsScreen
+        self.app.push_screen(SettingsScreen(self.db_path))
