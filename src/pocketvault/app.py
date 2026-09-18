@@ -64,6 +64,8 @@ class PocketVaultApp(App):
         """Apply theme from TankuOS env vars if present."""
         theme_name = os.environ.get("TANKUOS_THEME", "")
         if not theme_name:
+            # Default theme when not running under TankuOS
+            self.theme = "textual-dark"
             return
         
         # Build custom theme from TankuOS palette
