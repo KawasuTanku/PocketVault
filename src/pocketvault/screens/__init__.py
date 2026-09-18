@@ -2,10 +2,13 @@ from textual.screen import Screen
 from textual.containers import Container
 from textual.widgets import Static, DataTable, Header, Footer
 from pocketvault.crew.queries import get_pocket_balances, get_ready_to_budget
+from pocketvault.monster.queries import get_latest_snapshot, get_monster_products
 
 class Dashboard(Screen):
     BINDINGS = [
-        ("s", "sync_crew", "Sync"),
+        ("s", "sync_all", "Sync All"),
+        ("c", "sync_crew", "Sync Crew"),
+        ("m", "sync_monster", "Sync Monster"),
         ("r", "refresh", "Refresh"),
         ("q", "quit", "Quit"),
     ]
@@ -17,46 +20,94 @@ class Dashboard(Screen):
     def compose(self):
         yield Header()
         with Container(id="dashboard"):
-            yield Static(id="summary")
-            yield DataTable(id="pocket-table")
+            yield Static(id="crew-summary", classes="summary")
+            yield DataTable(id="pockets-table")
+            yield Static(id="monster-summary", classes="summary")
+            yield DataTable(id="monster-table")
         yield Footer()
 
     def on_mount(self):
         self.refresh_data()
 
     def refresh_data(self):
-        ready = get_ready_to_budget(self.db_path)
         pockets = get_pocket_balances(self.db_path)
-        total = sum((p.get("balance_cents", 0) or 0) / 100.0 for p in pockets if p["active"])
+        total_cash = sum((p.get("balance_cents", 0) or 0) / 100.0 for p in pockets if p["active"])
+        ready = get_ready_to_budget(self.db_path)
 
-        summary = self.query_one("#summary", Static)
-        summary.update(f"Ready to Budget: ${ready:,.2f}  |  Total Pockets: ${total:,.2f}")
+        crew_summ = self.query_one("#crew-summary", Static)
+        crew_summ.update(f"Cash Pockets  |  Ready to Budget: ${ready:,.2f}  |  Total: ${total_cash:,.2f}")
 
-        table = self.query_one("#pocket-table", DataTable)
-        table.clear()
-        table.add_columns("Pocket", "Balance", "Goal", "Progress")
-
+        pt = self.query_one("#pockets-table", DataTable)
+        pt.clear()
+        pt.add_columns("Pocket", "Balance", "Goal", "Progress")
         for p in pockets:
             if not p["active"]:
                 continue
-            bal_cents = p.get("balance_cents") or 0
+            bal = (p.get("balance_cents") or 0) / 100
             goal_cents = p.get("goal_cents") or 0
-            bal_str = f"${bal_cents/100:,.2f}"
             goal_str = f"${goal_cents/100:,.2f}" if goal_cents > 0 else "—"
-            progress = ""
+            prog = ""
             if goal_cents > 0:
-                pct = min(100, (bal_cents / goal_cents) * 100)
-                progress = f"{pct:.0f}%"
-            table.add_row(p["name"], bal_str, goal_str, progress)
+                prog = f"{min(100, ((p.get('balance_cents') or 0) / goal_cents) * 100):.0f}%"
+            pt.add_row(p["name"], f"${bal:,.2f}", goal_str, prog)
+
+        snap = get_latest_snapshot(self.db_path)
+        if snap:
+            rev = snap["total_revenue_cents"] / 100
+            exp = snap["total_expenses_cents"] / 100
+            net = snap["net_profit_cents"] / 100
+            sv = snap["total_stock_value_cents"] / 100
+            low = snap["low_stock_count"]
+            self.query_one("#monster-summary", Static).update(
+                f"Monster P&L  |  Revenue: ${rev:,.2f}  |  Expenses: ${exp:,.2f}  |  Net: ${net:,.2f}  |  Stock: ${sv:,.2f}  |  Low Stock: {low}"
+            )
+        else:
+            self.query_one("#monster-summary", Static).update("Monster P&L  —  press 'm' to sync")
+
+        mt = self.query_one("#monster-table", DataTable)
+        mt.clear()
+        mt.add_columns("Product", "SKU", "Qty", "Cost", "Price", "Value")
+        products = get_monster_products(self.db_path, low_only=True)
+        for prod in products[:20]:
+            mt.add_row(
+                prod["name"],
+                prod["sku"] or "",
+                str(prod["qty_on_hand"]),
+                f"${prod['unit_cost_cents']/100:,.2f}",
+                f"${prod['unit_price_cents']/100:,.2f}",
+                f"${prod['stock_value_cents']/100:,.2f}",
+            )
+        if not products:
+            mt.add_row("No low-stock items", "", "", "", "", "")
+
+    def action_sync_all(self):
+        self._sync_crew()
+        self._sync_monster()
+        self.refresh_data()
 
     def action_sync_crew(self):
+        self._sync_crew()
+        self.refresh_data()
+
+    def action_sync_monster(self):
+        self._sync_monster()
+        self.refresh_data()
+
+    def _sync_crew(self):
         try:
             from pocketvault.crew.sync import sync_crew_pockets
             result = sync_crew_pockets(self.db_path)
-            self.notify(f"Synced: {result['new']} new, {result['updated']} updated", timeout=3)
+            self.notify(f"Crew: {result['new']} new, {result['updated']} updated", timeout=3)
         except Exception as e:
-            self.notify(f"Sync failed: {e}", timeout=5, severity="error")
-        self.refresh_data()
+            self.notify(f"Crew sync failed: {e}", timeout=5, severity="error")
+
+    def _sync_monster(self):
+        try:
+            from pocketvault.monster.sync import sync_monster
+            result = sync_monster(self.db_path)
+            self.notify(f"Monster: {result['products']} products, {result['low_stock']} low stock", timeout=3)
+        except Exception as e:
+            self.notify(f"Monster sync failed: {e}", timeout=5, severity="error")
 
     def action_refresh(self):
         self.refresh_data()

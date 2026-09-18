@@ -32,6 +32,29 @@ CREATE TABLE IF NOT EXISTS pocket_aliases (
     created_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS monster_products (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    sku TEXT,
+    qty_on_hand INTEGER DEFAULT 0,
+    unit_cost_cents INTEGER DEFAULT 0,
+    unit_price_cents INTEGER DEFAULT 0,
+    discontinued INTEGER DEFAULT 0,
+    low_stock INTEGER DEFAULT 0,
+    stock_value_cents INTEGER DEFAULT 0,
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS monster_snapshots (
+    id INTEGER PRIMARY KEY,
+    total_revenue_cents INTEGER DEFAULT 0,
+    total_expenses_cents INTEGER DEFAULT 0,
+    net_profit_cents INTEGER DEFAULT 0,
+    total_stock_value_cents INTEGER DEFAULT 0,
+    low_stock_count INTEGER DEFAULT 0,
+    captured_at TEXT DEFAULT (datetime('now'))
+);
+
 CREATE VIEW IF NOT EXISTS pocket_balances AS
 SELECT
     p.id, p.crew_id, p.name, p.display_name, p.active,
