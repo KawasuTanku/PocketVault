@@ -64,33 +64,37 @@ class PocketVaultApp(App):
         """Apply theme from TankuOS env vars if present."""
         theme_name = os.environ.get("TANKUOS_THEME", "")
         if not theme_name:
-            # Default theme when not running under TankuOS
             self.theme = "textual-dark"
             return
-        
-        # Build custom theme from TankuOS palette
-        bg = os.environ.get("TANKUOS_THEME_BG", "")
-        panel = os.environ.get("TANKUOS_THEME_PANEL", "")
-        fg = os.environ.get("TANKUOS_THEME_FG", "")
-        accent = os.environ.get("TANKUOS_THEME_ACCENT", "")
-        secondary = os.environ.get("TANKUOS_THEME_SECONDARY", "")
-        error = os.environ.get("TANKUOS_THEME_ERROR", "")
-        
-        theme = self.themes.get(theme_name)
-        if theme:
-            self.theme = theme_name
-        elif bg and fg and accent:
-            # Build a custom theme from the TankuOS palette
-            from textual.theme import Theme
-            custom = Theme(
-                name=f"tankuos-{theme_name}",
-                primary=Color.from_rgb(*map(int, accent.split(","))),
-                background=Color.from_rgb(*map(int, bg.split(","))),
-                surface=Color.from_rgb(*map(int, panel.split(","))) if panel else Color.from_rgb(*map(int, bg.split(","))),
-                foreground=Color.from_rgb(*map(int, fg.split(","))),
-            )
-            self.register_theme(custom)
-            self.theme = f"tankuos-{theme_name}"
+
+        try:
+            available = self.themes
+            if theme_name in available:
+                self.theme = theme_name
+                return
+
+            bg = os.environ.get("TANKUOS_THEME_BG", "")
+            fg = os.environ.get("TANKUOS_THEME_FG", "")
+            accent = os.environ.get("TANKUOS_THEME_ACCENT", "")
+
+            if bg and fg and accent:
+                from textual.theme import Theme
+                panel = os.environ.get("TANKUOS_THEME_PANEL", bg)
+                custom = Theme(
+                    name=f"tankuos-{theme_name}",
+                    primary=Color.from_rgb(*map(int, accent.split(","))),
+                    background=Color.from_rgb(*map(int, bg.split(","))),
+                    surface=Color.from_rgb(*map(int, panel.split(","))),
+                    foreground=Color.from_rgb(*map(int, fg.split(","))),
+                )
+                self.register_theme(custom)
+                self.theme = f"tankuos-{theme_name}"
+            else:
+                self.theme = "textual-dark"
+        except Exception as e:
+            import sys
+            print(f"PocketVault theme error: {e}", file=sys.stderr)
+            self.theme = "textual-dark"
     
     def on_mount(self):
         from pocketvault.screens import Dashboard
