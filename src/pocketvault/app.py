@@ -68,10 +68,12 @@ class PocketVaultApp(App):
             return
 
         try:
-            if theme_name in self.available_themes:
+            available = list(self.available_themes)
+            if theme_name in available:
                 self.theme = theme_name
                 return
 
+            # Build custom theme from TankuOS palette
             bg = os.environ.get("TANKUOS_THEME_BG", "")
             fg = os.environ.get("TANKUOS_THEME_FG", "")
             accent = os.environ.get("TANKUOS_THEME_ACCENT", "")
