@@ -1,5 +1,5 @@
 from textual.screen import Screen
-from textual.containers import Container
+from textual.containers import Container, VerticalScroll
 from textual.widgets import Static, DataTable, Header, Footer
 from pocketvault.crew.queries import get_pocket_balances, get_ready_to_budget
 from pocketvault.monster.queries import get_latest_snapshot, get_monster_products
@@ -22,7 +22,7 @@ class Dashboard(Screen):
 
     def compose(self):
         yield Header()
-        with Container(id="dashboard"):
+        with VerticalScroll(id="dashboard"):
             yield Static(id="crew-summary", classes="summary")
             yield DataTable(id="pockets-table")
             yield Static(id="spacer1", classes="spacer")

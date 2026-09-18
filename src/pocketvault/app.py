@@ -10,8 +10,7 @@ class PocketVaultApp(App):
         layout: vertical;
     }
     #dashboard {
-        height: 100%;
-        padding: 1;
+        height: 1fr;
     }
     .summary {
         height: 3;
@@ -24,7 +23,7 @@ class PocketVaultApp(App):
         height: 1;
     }
     #pocket-table {
-        height: 1fr;
+        height: auto;
     }
     #settings-modal {
         width: 80%;
