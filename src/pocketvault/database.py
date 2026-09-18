@@ -56,6 +56,25 @@ CREATE TABLE IF NOT EXISTS monster_snapshots (
     captured_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS retirement_holdings (
+    id INTEGER PRIMARY KEY,
+    symbol TEXT NOT NULL,
+    name TEXT,
+    quantity REAL NOT NULL,
+    average_cost_cents INTEGER DEFAULT 0,
+    current_price_cents INTEGER DEFAULT 0,
+    current_value_cents INTEGER DEFAULT 0,
+    gain_loss_cents INTEGER DEFAULT 0,
+    asset_class TEXT,
+    captured_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS retirement_targets (
+    symbol TEXT PRIMARY KEY,
+    target_pct REAL NOT NULL,
+    asset_class TEXT
+);
+
 CREATE VIEW IF NOT EXISTS pocket_balances AS
 SELECT
     p.id, p.crew_id, p.name, p.display_name, p.active,

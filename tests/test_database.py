@@ -16,6 +16,8 @@ def test_init_db_creates_all_tables():
         assert "pocket_aliases" in table_names
         assert "monster_products" in table_names
         assert "monster_snapshots" in table_names
+        assert "retirement_holdings" in table_names
+        assert "retirement_targets" in table_names
         
         views = conn.execute("SELECT name FROM sqlite_master WHERE type='view'").fetchall()
         view_names = {v[0] for v in views}

@@ -3,12 +3,14 @@ from textual.containers import Container
 from textual.widgets import Static, DataTable, Header, Footer
 from pocketvault.crew.queries import get_pocket_balances, get_ready_to_budget
 from pocketvault.monster.queries import get_latest_snapshot, get_monster_products
+from pocketvault.retirement.queries import get_holdings as get_retirement_holdings, get_summary as get_retirement_summary, get_targets
 
 class Dashboard(Screen):
     BINDINGS = [
         ("s", "sync_all", "Sync All"),
-        ("c", "sync_crew", "Sync Crew"),
-        ("m", "sync_monster", "Sync Monster"),
+        ("c", "sync_crew", "Crew"),
+        ("m", "sync_monster", "Monster"),
+        ("t", "sync_retirement", "Retirement"),
         ("r", "refresh", "Refresh"),
         ("q", "quit", "Quit"),
     ]
@@ -22,21 +24,26 @@ class Dashboard(Screen):
         with Container(id="dashboard"):
             yield Static(id="crew-summary", classes="summary")
             yield DataTable(id="pockets-table")
-            yield Static(id="spacer", classes="spacer")
+            yield Static(id="spacer1", classes="spacer")
             yield Static(id="monster-summary", classes="summary")
             yield DataTable(id="monster-table")
+            yield Static(id="spacer2", classes="spacer")
+            yield Static(id="retirement-summary", classes="summary")
+            yield DataTable(id="retirement-table")
         yield Footer()
 
     def on_mount(self):
         self.refresh_data()
 
     def refresh_data(self):
+        # --- Crew ---
         pockets = get_pocket_balances(self.db_path)
         total_cash = sum((p.get("balance_cents", 0) or 0) / 100.0 for p in pockets if p["active"])
         ready = get_ready_to_budget(self.db_path)
 
-        crew_summ = self.query_one("#crew-summary", Static)
-        crew_summ.update(f"Cash Pockets  |  Ready to Budget: ${ready:,.2f}  |  Total: ${total_cash:,.2f}")
+        self.query_one("#crew-summary", Static).update(
+            f"Cash Pockets  |  Ready to Budget: ${ready:,.2f}  |  Total: ${total_cash:,.2f}"
+        )
 
         pt = self.query_one("#pockets-table", DataTable)
         pt.clear()
@@ -53,6 +60,7 @@ class Dashboard(Screen):
                 prog = f"{min(100, ((p.get('balance_cents') or 0) / goal_cents) * 100):.0f}%"
             pt.add_row(p["name"], f"${bal:,.2f}", goal_str, prog)
 
+        # --- Monster ---
         snap = get_latest_snapshot(self.db_path)
         if snap:
             rev = snap["total_revenue_cents"] / 100
@@ -85,9 +93,40 @@ class Dashboard(Screen):
         if not products:
             mt.add_row("No products — press 'm' to sync", "", "", "", "", "", "")
 
+        # --- Retirement ---
+        ret_summary = get_retirement_summary(self.db_path)
+        if ret_summary:
+            tv = ret_summary["total_value_cents"] / 100
+            gl = ret_summary["total_gain_loss_cents"] / 100
+            self.query_one("#retirement-summary", Static).update(
+                f"Retirement  |  Total Value: ${tv:,.2f}  |  Gain/Loss: ${gl:+,.2f}"
+            )
+        else:
+            self.query_one("#retirement-summary", Static).update("Retirement  —  press 't' to sync")
+
+        rt = self.query_one("#retirement-table", DataTable)
+        rt.clear()
+        if not rt.columns:
+            rt.add_columns("Symbol", "Name", "Qty", "Avg Cost", "Price", "Value", "Gain/Loss", "Class")
+        holdings = get_retirement_holdings(self.db_path)
+        for h in holdings:
+            rt.add_row(
+                h["symbol"],
+                h["name"] or "",
+                f"{h['quantity']:.2f}",
+                f"${h['average_cost_cents']/100:,.2f}",
+                f"${h['current_price_cents']/100:,.2f}",
+                f"${h['current_value_cents']/100:,.2f}",
+                f"${h['gain_loss_cents']/100:+,.2f}",
+                h["asset_class"] or "",
+            )
+        if not holdings:
+            rt.add_row("No holdings — press 't' to sync", "", "", "", "", "", "", "")
+
     def action_sync_all(self):
         self._sync_crew()
         self._sync_monster()
+        self._sync_retirement()
         self.refresh_data()
 
     def action_sync_crew(self):
@@ -96,6 +135,10 @@ class Dashboard(Screen):
 
     def action_sync_monster(self):
         self._sync_monster()
+        self.refresh_data()
+
+    def action_sync_retirement(self):
+        self._sync_retirement()
         self.refresh_data()
 
     def _sync_crew(self):
@@ -113,6 +156,15 @@ class Dashboard(Screen):
             self.notify(f"Monster: {result['products']} products, {result['low_stock']} low stock", timeout=3)
         except Exception as e:
             self.notify(f"Monster sync failed: {e}", timeout=5, severity="error")
+
+    def _sync_retirement(self):
+        try:
+            from pocketvault.retirement.sync import sync_retirement
+            result = sync_retirement(self.db_path)
+            tv = result["total_value_cents"] / 100
+            self.notify(f"Retirement: {result['holdings']} holdings, ${tv:,.2f} total", timeout=3)
+        except Exception as e:
+            self.notify(f"Retirement sync failed: {e}", timeout=5, severity="error")
 
     def action_refresh(self):
         self.refresh_data()
