@@ -108,8 +108,6 @@ class Dashboard(Screen):
         rt.clear()
         if not rt.columns:
             rt.add_columns("Symbol", "Name", "Qty", "Avg Cost", "Price", "Value", "Gain/Loss", "Class")
-            rt.columns[0].width = 6
-            rt.columns[1].width = 25
         holdings = get_retirement_holdings(self.db_path)
         for h in holdings:
             rt.add_row(
