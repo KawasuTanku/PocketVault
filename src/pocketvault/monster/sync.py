@@ -31,16 +31,17 @@ def sync_monster(db_path=None) -> dict:
             is_low = 1 if p.get("needs_reorder") else 0
             sku = p.get("sku", "") or ""
             name = p.get("name", pid)
+            variant = p.get("variant", "") or ""
 
             if is_low:
                 low_stock_count += 1
             stock_value_cents += sv_cents
 
             conn.execute("""
-                INSERT INTO monster_products (id, name, sku, qty_on_hand, unit_cost_cents,
+                INSERT INTO monster_products (id, name, variant, sku, qty_on_hand, unit_cost_cents,
                     unit_price_cents, discontinued, low_stock, stock_value_cents)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (pid, name, sku, qty, cost_cents, price_cents, discontinued, is_low, sv_cents))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (pid, name, variant, sku, qty, cost_cents, price_cents, discontinued, is_low, sv_cents))
             product_count += 1
 
     # Snapshot P&L

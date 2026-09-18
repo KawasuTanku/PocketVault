@@ -46,6 +46,7 @@ def test_sync_monster():
         {
             "id": "p1",
             "name": "Monster Energy Original",
+            "variant": "Original",
             "sku": "ME-001",
             "qty_on_hand": 24,
             "unit_cost": 1.20,
@@ -57,6 +58,7 @@ def test_sync_monster():
         {
             "id": "p2",
             "name": "Monster Ultra",
+            "variant": "Ultra",
             "sku": "ME-002",
             "qty_on_hand": 2,
             "unit_cost": 1.30,
@@ -93,7 +95,9 @@ def test_sync_monster():
         assert len(products) == 2
         assert products[0]["unit_cost_cents"] == 120
         assert products[0]["unit_price_cents"] == 250
+        assert products[0]["variant"] == "Original"
         assert products[1]["low_stock"] == 1
+        assert products[1]["variant"] == "Ultra"
     finally:
         os.unlink(db_path)
 
