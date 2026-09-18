@@ -23,24 +23,25 @@ def sync_monster(db_path=None) -> dict:
         conn.execute("DELETE FROM monster_products")
         for p in products:
             pid = str(p.get("id", ""))
-            qty = int(p.get("qtyOnHand", 0) or 0)
-            cost = int(p.get("unitCostCents", p.get("unit_cost_cents", 0)) or 0)
-            price = int(p.get("unitPriceCents", p.get("unit_price_cents", 0)) or 0)
+            qty = int(p.get("qty_on_hand", 0) or 0)
+            cost_cents = int(round((p.get("unit_cost", 0) or 0) * 100))
+            price_cents = int(round((p.get("unit_price", 0) or 0) * 100))
+            sv_cents = int(round((p.get("stock_value", 0) or 0) * 100))
             discontinued = 1 if p.get("discontinued") else 0
-            is_low = 1 if p.get("needsReorder") or p.get("low_stock") else 0
-            sv = int(p.get("stockValueCents", p.get("stock_value_cents", qty * cost)) or 0)
-            sku = p.get("sku", "")
+            is_low = 1 if p.get("needs_reorder") else 0
+            sku = p.get("sku", "") or ""
             name = p.get("name", pid)
+            variant = p.get("variant", "") or ""
 
             if is_low:
                 low_stock_count += 1
-            stock_value_cents += sv
+            stock_value_cents += sv_cents
 
             conn.execute("""
-                INSERT INTO monster_products (id, name, sku, qty_on_hand, unit_cost_cents,
+                INSERT INTO monster_products (id, name, variant, sku, qty_on_hand, unit_cost_cents,
                     unit_price_cents, discontinued, low_stock, stock_value_cents)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (pid, name, sku, qty, cost, price, discontinued, is_low, sv))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (pid, name, variant, sku, qty, cost_cents, price_cents, discontinued, is_low, sv_cents))
             product_count += 1
 
     # Snapshot P&L

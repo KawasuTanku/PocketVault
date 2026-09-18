@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS pocket_aliases (
 CREATE TABLE IF NOT EXISTS monster_products (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
+    variant TEXT,
     sku TEXT,
     qty_on_hand INTEGER DEFAULT 0,
     unit_cost_cents INTEGER DEFAULT 0,

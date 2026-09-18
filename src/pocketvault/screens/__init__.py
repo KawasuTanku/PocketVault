@@ -66,13 +66,13 @@ class Dashboard(Screen):
 
         mt = self.query_one("#monster-table", DataTable)
         mt.clear()
-        mt.add_columns("Product", "SKU", "Qty", "Cost", "Price", "Value", "Status")
+        mt.add_columns("Product", "Variant", "Qty", "Cost", "Price", "Value", "Status")
         products = get_monster_products(self.db_path)
         products.sort(key=lambda p: (not p["low_stock"], p["name"]))
         for prod in products:
             mt.add_row(
                 prod["name"],
-                prod["sku"] or "",
+                prod["variant"] or "",
                 str(prod["qty_on_hand"]),
                 f"${prod['unit_cost_cents']/100:,.2f}",
                 f"${prod['unit_price_cents']/100:,.2f}",

@@ -47,26 +47,26 @@ def test_sync_monster():
             "id": "p1",
             "name": "Monster Energy Original",
             "sku": "ME-001",
-            "qtyOnHand": 24,
-            "unitCostCents": 120,
-            "unitPriceCents": 250,
-            "stockValueCents": 2880,
+            "qty_on_hand": 24,
+            "unit_cost": 1.20,
+            "unit_price": 2.50,
+            "stock_value": 28.80,
             "discontinued": False,
-            "needsReorder": False,
+            "needs_reorder": False,
         },
         {
             "id": "p2",
             "name": "Monster Ultra",
             "sku": "ME-002",
-            "qtyOnHand": 2,
-            "unitCostCents": 130,
-            "unitPriceCents": 260,
-            "stockValueCents": 260,
+            "qty_on_hand": 2,
+            "unit_cost": 1.30,
+            "unit_price": 2.60,
+            "stock_value": 2.60,
             "discontinued": False,
-            "needsReorder": True,
+            "needs_reorder": True,
         },
     ]
-    mock_stats = {"low_stock_count": 1, "total_stock_value": 3140}
+    mock_stats = {"low_stock_count": 1, "total_stock_value": 31.40}
     mock_summary = {"revenue": 5000.0, "expenses": 3200.0, "net": 1800.0}
     
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
@@ -87,12 +87,13 @@ def test_sync_monster():
         assert snap["total_revenue_cents"] == 500000
         assert snap["net_profit_cents"] == 180000
         assert snap["low_stock_count"] == 1
+        assert snap["total_stock_value_cents"] == 3140
         
         products = get_monster_products(db_path)
         assert len(products) == 2
-        low = get_monster_products(db_path, low_only=True)
-        assert len(low) == 1
-        assert low[0]["name"] == "Monster Ultra"
+        assert products[0]["unit_cost_cents"] == 120
+        assert products[0]["unit_price_cents"] == 250
+        assert products[1]["low_stock"] == 1
     finally:
         os.unlink(db_path)
 
