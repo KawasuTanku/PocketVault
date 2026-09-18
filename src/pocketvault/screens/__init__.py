@@ -39,7 +39,8 @@ class Dashboard(Screen):
 
         pt = self.query_one("#pockets-table", DataTable)
         pt.clear()
-        pt.add_columns("Pocket", "Balance", "Goal", "Progress")
+        if not pt.columns:
+            pt.add_columns("Pocket", "Balance", "Goal", "Progress")
         for p in pockets:
             if not p["active"]:
                 continue
@@ -66,7 +67,8 @@ class Dashboard(Screen):
 
         mt = self.query_one("#monster-table", DataTable)
         mt.clear()
-        mt.add_columns("Product", "Variant", "Qty", "Cost", "Price", "Value", "Status")
+        if not mt.columns:
+            mt.add_columns("Product", "Variant", "Qty", "Cost", "Price", "Value", "Status")
         products = get_monster_products(self.db_path)
         products.sort(key=lambda p: (not p["low_stock"], p["name"]))
         for prod in products:
