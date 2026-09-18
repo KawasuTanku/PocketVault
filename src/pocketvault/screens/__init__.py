@@ -10,7 +10,7 @@ class Dashboard(Screen):
         ("q", "quit", "Quit"),
     ]
 
-    def __init__(self, db_path: str, **kwargs):
+    def __init__(self, db_path, **kwargs):
         super().__init__(**kwargs)
         self.db_path = db_path
 

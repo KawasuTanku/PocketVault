@@ -63,5 +63,5 @@ class PocketVaultApp(App):
             self.theme = f"tankuos-{theme_name}"
     
     def on_mount(self):
-        from pocketvault.screens.dashboard import Dashboard
+        from pocketvault.screens import Dashboard
         self.push_screen(Dashboard(self.db_path))
