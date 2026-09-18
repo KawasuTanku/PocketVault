@@ -23,6 +23,7 @@ class Dashboard(Screen):
             yield Static(id="crew-summary", classes="summary")
             yield DataTable(id="pockets-table")
             yield Static(id="monster-summary", classes="summary")
+            yield Static(id="spacer", classes="spacer")
             yield DataTable(id="monster-table")
         yield Footer()
 

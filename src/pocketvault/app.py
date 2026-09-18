@@ -13,12 +13,15 @@ class PocketVaultApp(App):
         height: 100%;
         padding: 1;
     }
-    #summary {
+    .summary {
         height: 3;
         background: $surface;
         color: $text;
         padding: 1;
         text-align: center;
+    }
+    .spacer {
+        height: 1;
     }
     #pocket-table {
         height: 1fr;
