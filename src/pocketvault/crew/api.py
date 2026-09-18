@@ -144,21 +144,3 @@ def fetch_pockets(token: Optional[str] = None) -> list[dict]:
                 "account_name": sub.get("account", {}).get("displayName", ""),
             })
     return pockets
-
-
-def fetch_autopilot_reserve(token: Optional[str] = None) -> Optional[dict]:
-    """Fetch Autopilot Reserve (billReserve) info from Crew."""
-    accounts = fetch_accounts(token)
-    for account in accounts:
-        bill_reserve = account.get("billReserve")
-        if bill_reserve:
-            settings = bill_reserve.get("settings", {})
-            funding = settings.get("funding", {})
-            sub = funding.get("subaccount", {})
-            return {
-                "next_funding_date": bill_reserve.get("nextFundingDate"),
-                "total_reserved": bill_reserve.get("totalReservedAmount"),
-                "estimated_next_funding": bill_reserve.get("estimatedNextFundingAmount"),
-                "funding_subaccount": sub.get("displayName", ""),
-            }
-    return None

@@ -1,14 +1,13 @@
 import json
 import os
 import tempfile
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pocketvault.database import init_db, get_connection
-from pocketvault.crew.api import fetch_pockets, fetch_autopilot_reserve, crew_query
+from pocketvault.crew.api import fetch_pockets, crew_query
 from pocketvault.crew.sync import sync_crew_pockets
 
 
 def test_fetch_pockets():
-    """Test parsing pocket data from Crew API response."""
     mock_response = {
         "data": {
             "currentUser": {
@@ -59,41 +58,7 @@ def test_fetch_pockets():
     assert pockets[1]["name"] == "Autopilot Reserve"
 
 
-def test_fetch_autopilot_reserve():
-    """Test parsing autopilot reserve data."""
-    mock_response = {
-        "data": {
-            "currentUser": {
-                "accounts": [
-                    {
-                        "billReserve": {
-                            "nextFundingDate": "2026-09-17",
-                            "totalReservedAmount": 223605,
-                            "estimatedNextFundingAmount": 51063,
-                            "settings": {
-                                "funding": {
-                                    "subaccount": {"displayName": "Save: Buffer"}
-                                }
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    }
-    
-    with patch("pocketvault.crew.api.crew_query", return_value=mock_response):
-        reserve = fetch_autopilot_reserve()
-    
-    assert reserve is not None
-    assert reserve["next_funding_date"] == "2026-09-17"
-    assert reserve["total_reserved"] == 223605
-    assert reserve["estimated_next_funding"] == 51063
-    assert reserve["funding_subaccount"] == "Save: Buffer"
-
-
 def test_sync_crew_pockets():
-    """Test syncing pockets from Crew API to local DB."""
     mock_pockets = [
         {
             "crew_id": "sub1",
@@ -116,15 +81,13 @@ def test_sync_crew_pockets():
     try:
         init_db(db_path)
         
-        with patch("pocketvault.crew.sync.fetch_pockets", return_value=mock_pockets), \
-             patch("pocketvault.crew.sync.fetch_autopilot_reserve", return_value=None):
+        with patch("pocketvault.crew.sync.fetch_pockets", return_value=mock_pockets):
             result = sync_crew_pockets(db_path)
         
         assert result["new"] == 1
         assert result["updated"] == 0
         assert result["total"] == 1
         
-        # Verify pocket was saved
         conn = get_connection(db_path)
         row = conn.execute("SELECT * FROM pockets WHERE crew_id = ?", ("sub1",)).fetchone()
         conn.close()
@@ -137,7 +100,6 @@ def test_sync_crew_pockets():
 
 
 def test_sync_updates_existing():
-    """Test that sync updates existing pockets."""
     mock_pockets = [
         {
             "crew_id": "sub1",
@@ -160,14 +122,10 @@ def test_sync_updates_existing():
     try:
         init_db(db_path)
         
-        # First sync
-        with patch("pocketvault.crew.sync.fetch_pockets", return_value=mock_pockets), \
-             patch("pocketvault.crew.sync.fetch_autopilot_reserve", return_value=None):
+        with patch("pocketvault.crew.sync.fetch_pockets", return_value=mock_pockets):
             sync_crew_pockets(db_path)
         
-        # Second sync (update)
-        with patch("pocketvault.crew.sync.fetch_pockets", return_value=mock_pockets), \
-             patch("pocketvault.crew.sync.fetch_autopilot_reserve", return_value=None):
+        with patch("pocketvault.crew.sync.fetch_pockets", return_value=mock_pockets):
             result = sync_crew_pockets(db_path)
         
         assert result["new"] == 0

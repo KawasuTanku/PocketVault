@@ -11,19 +11,14 @@ def test_init_db_creates_all_tables():
         tables = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
         table_names = {t[0] for t in tables}
         
-        # Core tables
         assert "pockets" in table_names
-        assert "entries" in table_names
-        assert "import_batches" in table_names
-        assert "pocket_aliases" in table_names
         assert "config" in table_names
+        assert "pocket_aliases" in table_names
         
-        # Views
         views = conn.execute("SELECT name FROM sqlite_master WHERE type='view'").fetchall()
         view_names = {v[0] for v in views}
         assert "pocket_balances" in view_names
-        assert "ready_to_budget" in view_names
-        assert "total_crew_balance" in view_names
+        assert "total_balance" in view_names
     finally:
         os.unlink(db_path)
 
