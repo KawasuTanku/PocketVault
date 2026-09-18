@@ -81,12 +81,16 @@ class PocketVaultApp(App):
             if bg and fg and accent:
                 from textual.theme import Theme
                 panel = os.environ.get("TANKUOS_THEME_PANEL", bg)
+                
+                def parse_rgb(s):
+                    return tuple(map(int, s.split(",")))
+
                 custom = Theme(
                     name=f"tankuos-{theme_name}",
-                    primary=Color.from_rgb(*map(int, accent.split(","))),
-                    background=Color.from_rgb(*map(int, bg.split(","))),
-                    surface=Color.from_rgb(*map(int, panel.split(","))),
-                    foreground=Color.from_rgb(*map(int, fg.split(","))),
+                    primary=Color(*parse_rgb(accent)),
+                    background=Color(*parse_rgb(bg)),
+                    surface=Color(*parse_rgb(panel)),
+                    foreground=Color(*parse_rgb(fg)),
                 )
                 self.register_theme(custom)
                 self.theme = f"tankuos-{theme_name}"
