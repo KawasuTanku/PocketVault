@@ -72,12 +72,12 @@ class Dashboard(Screen):
         for prod in products:
             mt.add_row(
                 prod["name"],
-                prod["variant"] or "",
+                prod.get("variant") or "",
                 str(prod["qty_on_hand"]),
                 f"${prod['unit_cost_cents']/100:,.2f}",
                 f"${prod['unit_price_cents']/100:,.2f}",
                 f"${prod['stock_value_cents']/100:,.2f}",
-                "LOW" if prod["low_stock"] else "",
+                "DISCONTINUED" if prod["discontinued"] else ("LOW" if prod["low_stock"] else ""),
             )
         if not products:
             mt.add_row("No products — press 'm' to sync", "", "", "", "", "", "")
