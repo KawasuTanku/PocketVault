@@ -66,9 +66,10 @@ class Dashboard(Screen):
 
         mt = self.query_one("#monster-table", DataTable)
         mt.clear()
-        mt.add_columns("Product", "SKU", "Qty", "Cost", "Price", "Value")
-        products = get_monster_products(self.db_path, low_only=True)
-        for prod in products[:20]:
+        mt.add_columns("Product", "SKU", "Qty", "Cost", "Price", "Value", "Status")
+        products = get_monster_products(self.db_path)
+        products.sort(key=lambda p: (not p["low_stock"], p["name"]))
+        for prod in products:
             mt.add_row(
                 prod["name"],
                 prod["sku"] or "",
@@ -76,9 +77,10 @@ class Dashboard(Screen):
                 f"${prod['unit_cost_cents']/100:,.2f}",
                 f"${prod['unit_price_cents']/100:,.2f}",
                 f"${prod['stock_value_cents']/100:,.2f}",
+                "LOW" if prod["low_stock"] else "",
             )
         if not products:
-            mt.add_row("No low-stock items", "", "", "", "", "")
+            mt.add_row("No products — press 'm' to sync", "", "", "", "", "", "")
 
     def action_sync_all(self):
         self._sync_crew()
